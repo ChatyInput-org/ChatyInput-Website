@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatyInput — Voice Input, Reimagined</title>
+    <meta name="description" content="Open-source voice input app with LLM-powered intent recognition. Speak naturally, let AI handle the rest.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=General+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+
+        :root {
+            --ink: #0a0a0a;
+            --ink-2: #3a3a3a;
+            --ink-3: #777;
+            --bg: #fafaf9;
+            --bg-2: #f0efed;
+            --bg-dark: #0a0a0a;
+            --accent: #e85d25;
+            --border: #e4e3e0;
+            --card: #fff;
+            --radius: 14px;
+            --font: 'General Sans', -apple-system, system-ui, sans-serif;
+        }
+
+        html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
+        body { font-family: var(--font); color: var(--ink); background: var(--bg); line-height: 1.5; overflow-x: hidden; }
+        img { display: block; max-width: 100%; }
+        a { color: inherit; }
+
+        /* ── Nav ── */
+        nav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            padding: 16px 32px;
+            background: rgba(250,250,249,0.8);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border);
+        }
+        .nav-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; }
+        .nav-left { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); }
+        .nav-mark { width: 28px; height: 28px; background: var(--accent); border-radius: 7px; display: flex; align-items: center; justify-content: center; }
+        .nav-mark svg { width: 15px; height: 15px; }
+        .nav-wordmark { font-weight: 700; font-size: 15px; letter-spacing: -0.03em; }
+        .nav-right { display: flex; align-items: center; gap: 24px; }
+        .nav-right a { font-size: 14px; font-weight: 500; color: var(--ink-2); text-decoration: none; transition: color .15s; }
+        .nav-right a:hover { color: var(--ink); }
+        .nav-cta {
+            font-size: 13px !important; font-weight: 600 !important; color: #fff !important;
+            background: var(--ink); padding: 8px 18px; border-radius: 8px;
+            transition: background .15s;
+        }
+        .nav-cta:hover { background: #222 !important; }
+        .nav-right a:not(.nav-cta):hover { color: var(--accent); }
+
+        /* ── Hero ── */
+        .hero {
+            max-width: 1200px; margin: 0 auto;
+            padding: 140px 32px 80px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 48px;
+            align-items: center;
+        }
+        .hero-text { padding-top: 20px; }
+        .hero h1 {
+            font-size: clamp(36px, 4.5vw, 56px);
+            font-weight: 700;
+            line-height: 1.08;
+            letter-spacing: -0.04em;
+        }
+        .hero-sub {
+            margin-top: 20px;
+            font-size: 17px;
+            color: var(--ink-2);
+            line-height: 1.6;
+        }
+        .hero-actions { display: flex; gap: 12px; margin-top: 32px; flex-wrap: wrap; }
+        .btn {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 12px 24px; border-radius: 10px;
+            font-family: var(--font); font-size: 15px; font-weight: 600;
+            text-decoration: none; border: none; cursor: pointer;
+            transition: all .15s;
+        }
+        .btn svg { width: 17px; height: 17px; }
+        .btn-dark { background: var(--ink); color: #fff; }
+        .btn-dark:hover { background: #222; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,.1); }
+        .btn-ghost { background: transparent; color: var(--ink); border: 1.5px solid var(--border); }
+        .btn-ghost:hover { border-color: #bbb; transform: translateY(-1px); }
+
+        /* ── Hero product shot ── */
+        .hero-product {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+        .hero-product::before {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 400px; height: 400px;
+            background: radial-gradient(circle, rgba(232,93,37,0.1) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .product-window {
+            background: #1a1a1a;
+            border-radius: 28px;
+            border: 3px solid #444;
+            width: 320px;
+            min-width: 320px;
+            max-width: 320px;
+            margin: 0 auto;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.05) inset;
+        }
+        /* Phone status bar */
+        .pw-phone-status {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px 20px 4px;
+            font-size: 11px; color: #999;
+        }
+        .pw-phone-status-right { display: flex; gap: 6px; align-items: center; }
+        .pw-phone-status-right svg { width: 14px; height: 14px; }
+        /* Chat area above keyboard */
+        .pw-chat-area {
+            padding: 12px 20px;
+            min-height: 160px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+        .pw-chat-input {
+            background: #2a2a2a; border: 1px solid #444; border-radius: 20px;
+            padding: 10px 16px; font-size: 13px; color: #888;
+            display: flex; align-items: center; gap: 8px;
+            transition: border-color .3s;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+        .pw-chat-input-text {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .pw-chat-input-text { flex: 1; }
+        /* IME keyboard area */
+        .pw-ime {
+            background: #222; border-top: 1px solid #333;
+            padding: 12px 16px 16px;
+        }
+        .pw-body { padding: 0; }
+        .pw-side { display: none; }
+        .pw-tab {
+            padding: 8px 12px; border-radius: 7px;
+            font-size: 13px; color: #aaa;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .pw-tab svg { width: 15px; height: 15px; flex-shrink: 0; }
+        .pw-tab.on { background: rgba(232,93,37,0.12); color: var(--accent); font-weight: 600; }
+        .pw-content { flex: 1; display: flex; flex-direction: column; gap: 16px; }
+        .pw-buffer {
+            height: 150px; overflow-y: auto;
+            background: #111; border: 1px solid #2a2a2a; border-radius: 10px;
+            padding: 12px 16px; font-size: 12px; line-height: 1.5; color: #d4d4d4;
+        }
+        .pw-cursor { display: inline-block; width: 2px; height: 14px; background: var(--accent); vertical-align: text-bottom; animation: blink 1s step-end infinite; }
+        .pw-footer { display: flex; justify-content: space-between; align-items: center; padding: 0 2px; }
+        .pw-status { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #999; }
+        .pw-status-dot { width: 7px; height: 7px; border-radius: 50%; background: #22c55e; }
+        .pw-btns { display: flex; gap: 8px; align-items: center; }
+        .pw-rec {
+            width: 40px; height: 40px; border-radius: 50%;
+            background: var(--accent); display: flex; align-items: center; justify-content: center;
+            transition: transform .1s, box-shadow .1s, background .2s;
+            cursor: pointer;
+            position: relative;
+        }
+        .pw-rec.pressed {
+            transform: scale(0.88);
+            box-shadow: inset 0 2px 6px rgba(0,0,0,.3);
+        }
+        .pw-rec.recording {
+            background: #ef4444;
+            animation: pulse-red 1s ease-in-out infinite;
+        }
+        .pw-rec svg { width: 18px; height: 18px; }
+        .pw-edit-btn {
+            width: 32px; height: 32px; border-radius: 50%;
+            background: var(--accent); display: flex; align-items: center; justify-content: center;
+            transition: transform .1s, box-shadow .1s, background .2s;
+            cursor: pointer;
+            position: relative;
+        }
+        .pw-edit-btn svg { width: 14px; height: 14px; }
+        .pw-edit-btn.pressed {
+            transform: scale(0.85);
+            box-shadow: inset 0 2px 6px rgba(0,0,0,.3);
+        }
+        .pw-edit-btn.recording {
+            background: #ef4444;
+            animation: pulse-red 1s ease-in-out infinite;
+        }
+        /* Speaking person — outside window */
+        .speaking-person {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 20px;
+            max-width: 340px;
+            opacity: 0;
+            transform: translateY(6px);
+            transition: opacity .3s, transform .3s;
+            height: 48px;
+        }
+        .speaking-person.active {
+            opacity: 1;
+            transform: none;
+        }
+        .sp-avatar {
+            width: 40px; height: 40px; border-radius: 50%;
+            background: #222; border: 2px solid #444;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .sp-avatar svg { width: 20px; height: 20px; }
+        .sp-bubble {
+            display: flex; align-items: center; gap: 10px;
+            background: linear-gradient(135deg, #222 0%, #2a2a2a 100%);
+            border: 1px solid #444;
+            border-radius: 12px 12px 12px 4px;
+            padding: 10px 16px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+        }
+        .sp-waves {
+            display: flex; gap: 2.5px; align-items: center; height: 18px;
+        }
+        .sp-waves .sw {
+            width: 2.5px; border-radius: 2px;
+            background: var(--accent);
+            animation: wave .8s ease-in-out infinite;
+        }
+        .sp-text {
+            font-size: 13px; color: #ccc; white-space: nowrap;
+        }
+        .pw-btn {
+            padding: 8px 16px; border-radius: 7px; font-size: 12px; font-weight: 600;
+            border: 1px solid #444; background: transparent; color: #ccc;
+        }
+        .pw-btn.send { background: #fff; color: #0a0a0a; border-color: #fff; }
+
+        /* ── Feature sections (split layout like cursor) ── */
+        .feature-section {
+            max-width: 1200px; margin: 0 auto;
+            padding: 72px 32px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 64px;
+            align-items: center;
+        }
+        .feature-section.reverse .feature-text { order: 2; }
+        .feature-section.reverse .feature-visual { order: 1; }
+        .feature-section + .feature-section { border-top: 1px solid var(--border); }
+        .feature-tag {
+            display: inline-block;
+            font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em;
+            color: var(--accent);
+            margin-bottom: 12px;
+        }
+        .feature-text h2 {
+            font-size: clamp(28px, 3vw, 38px);
+            font-weight: 700;
+            line-height: 1.15;
+            letter-spacing: -0.03em;
+        }
+        .feature-text p {
+            margin-top: 16px;
+            font-size: 16px;
+            color: var(--ink-2);
+            line-height: 1.7;
+        }
+        .feature-text a.learn-more {
+            display: inline-flex; align-items: center; gap: 4px;
+            margin-top: 20px;
+            font-size: 15px; font-weight: 600; color: var(--accent);
+            text-decoration: none;
+            transition: gap .2s;
+        }
+        .feature-text a.learn-more:hover { gap: 8px; }
+        .feature-visual {
+            background: var(--bg-dark);
+            border-radius: 16px;
+            overflow: hidden;
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            border: 1px solid #222;
+            transition: border-color .3s, box-shadow .3s;
+        }
+        .feature-section:hover .feature-visual {
+            border-color: #333;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+        }
+        /* Alternate feature backgrounds for variety */
+        .feature-section:nth-of-type(2) .feature-visual { background: linear-gradient(160deg, #0a0a0a 0%, #141420 100%); }
+        .feature-section:nth-of-type(4) .feature-visual { background: linear-gradient(160deg, #0a0a0a 0%, #1a0f0a 100%); }
+        .feature-section:nth-of-type(5) .feature-visual { background: linear-gradient(160deg, #0a0a0a 0%, #0a1a0f 100%); }
+        .feature-visual img {
+            width: 100%; height: 100%;
+            object-fit: cover;
+        }
+
+        /* visual illustrations (inline SVG scenes) */
+        .fv-inner {
+            padding: 40px;
+            width: 100%;
+        }
+
+        /* STT visual */
+        .stt-viz {
+            display: flex; align-items: center; gap: 16px;
+            justify-content: center;
+        }
+        .stt-wave { display: flex; gap: 3px; align-items: center; }
+        .stt-wave .bar {
+            width: 3px; border-radius: 3px;
+            background: var(--accent);
+            animation: wave 1s ease-in-out infinite;
+        }
+        .stt-arrow { color: #888; font-size: 20px; margin: 0 8px; }
+        .stt-text {
+            background: #1a1a1a; border: 1px solid #444; border-radius: 10px;
+            padding: 16px 20px; color: #eee; font-size: 14px;
+            max-width: 220px; line-height: 1.5;
+        }
+
+        /* LLM intent visual */
+        .intent-cards {
+            display: flex; flex-direction: column; gap: 10px;
+            width: 100%;
+        }
+        .intent-card {
+            display: flex; align-items: center; gap: 12px;
+            background: #1a1a1a; border: 1px solid #383838;
+            border-radius: 10px; padding: 14px 18px;
+        }
+        .intent-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+        .intent-dot.green { background: #22c55e; }
+        .intent-dot.blue { background: #3b82f6; }
+        .intent-dot.amber { background: #f59e0b; }
+        .intent-label { font-size: 13px; font-weight: 600; color: #eee; flex: 1; }
+        .intent-val { font-size: 12px; color: #aaa; }
+
+        /* ── How it works (horizontal flow) ── */
+        .how-section {
+            background: linear-gradient(180deg, #0a0a0a 0%, #111 100%);
+            padding: 100px 32px;
+            color: #fff;
+            position: relative;
+        }
+        .how-section::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(232,93,37,0.3), transparent);
+        }
+        .how-inner { max-width: 1200px; margin: 0 auto; }
+        .how-inner .section-tag {
+            font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em;
+            color: var(--accent); margin-bottom: 12px;
+        }
+        .how-inner h2 {
+            font-size: clamp(28px, 3.5vw, 42px);
+            font-weight: 700; letter-spacing: -0.03em;
+            line-height: 1.15;
+        }
+        .how-steps {
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            gap: 28px; margin-top: 56px;
+        }
+        .how-step { position: relative; }
+        .how-num {
+            font-size: 48px; font-weight: 700;
+            color: rgba(255,255,255,.12);
+            line-height: 1;
+            margin-bottom: 16px;
+        }
+        .how-step h3 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+        .how-step p { font-size: 15px; color: #bbb; line-height: 1.6; }
+
+        /* ── Platforms ── */
+        .platforms-section {
+            max-width: 1200px; margin: 0 auto;
+            padding: 80px 32px;
+        }
+        .platforms-section .section-tag {
+            font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em;
+            color: var(--accent); margin-bottom: 12px;
+        }
+        .platforms-section h2 {
+            font-size: clamp(28px, 3.5vw, 42px);
+            font-weight: 700; letter-spacing: -0.03em; line-height: 1.15;
+        }
+        .platform-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            gap: 16px; margin-top: 48px;
+        }
+        .plat-card {
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 32px 24px;
+            text-align: center;
+            transition: all .2s;
+            background: var(--card);
+        }
+        .plat-card:hover { border-color: #ccc; box-shadow: 0 8px 30px rgba(0,0,0,.06); transform: translateY(-3px); background: linear-gradient(180deg, #fff 0%, #fafaf9 100%); }
+        .plat-icon { margin: 0 auto 16px; }
+        .plat-icon svg { width: 36px; height: 36px; }
+        .plat-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+        .plat-card .plat-desc { font-size: 13px; color: var(--ink-3); line-height: 1.5; margin-bottom: 20px; }
+        .plat-card .btn { width: 100%; justify-content: center; font-size: 13px; padding: 10px 16px; }
+
+        /* ── Open source CTA ── */
+        .oss-section {
+            background: linear-gradient(180deg, var(--bg-2) 0%, #e8e6e2 100%);
+            padding: 80px 32px;
+            text-align: center;
+            position: relative;
+        }
+        .oss-section::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--border), transparent);
+        }
+        .oss-inner { max-width: 560px; margin: 0 auto; }
+        .oss-inner h2 {
+            font-size: clamp(28px, 3.5vw, 38px);
+            font-weight: 700; letter-spacing: -0.03em; line-height: 1.15;
+        }
+        .oss-inner p { margin-top: 12px; font-size: 16px; color: var(--ink-2); line-height: 1.6; }
+        .oss-stats {
+            display: flex; gap: 40px; justify-content: center; margin-top: 32px;
+        }
+        .oss-stat { text-align: center; }
+        .oss-stat-val { font-size: 28px; font-weight: 700; letter-spacing: -0.03em; }
+        .oss-stat-label { font-size: 12px; color: var(--ink-3); font-weight: 500; margin-top: 2px; }
+        .oss-actions { display: flex; gap: 12px; justify-content: center; margin-top: 28px; }
+
+        /* ── Footer ── */
+        footer {
+            padding: 24px 32px;
+            border-top: 1px solid var(--border);
+        }
+        .footer-inner {
+            max-width: 1200px; margin: 0 auto;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .footer-left { font-size: 13px; color: var(--ink-3); }
+        .footer-left a { color: var(--ink-2); text-decoration: none; }
+        .footer-left a:hover { color: var(--ink); }
+        .footer-right { display: flex; gap: 20px; }
+        .footer-right a { font-size: 13px; color: var(--ink-3); text-decoration: none; }
+        .footer-right a:hover { color: var(--ink); }
+
+        /* ── Animations ── */
+        @keyframes blink { 50% { opacity: 0; } }
+        @keyframes pulse-red {
+            0%,100% { box-shadow: 0 0 0 0 rgba(239,68,68,.4); }
+            50% { box-shadow: 0 0 0 10px rgba(239,68,68,0); }
+        }
+        .demo-highlight {
+            background: rgba(232,93,37,.15);
+            border-radius: 3px;
+            padding: 0 2px;
+            transition: background .3s;
+        }
+        @keyframes wave {
+            0%,100% { transform: scaleY(.4); }
+            50% { transform: scaleY(1); }
+        }
+
+        .reveal { opacity: 1; transform: translateY(12px); transition: opacity .4s ease, transform .4s ease; }
+        .reveal.visible { opacity: 1; transform: none; }
+
+        /* ── Responsive ── */
+        @media (max-width: 900px) {
+            .feature-section { grid-template-columns: 1fr; gap: 32px; }
+            .feature-section.reverse .feature-text,
+            .feature-section.reverse .feature-visual { order: unset; }
+            .platform-grid { grid-template-columns: repeat(2, 1fr); }
+            .pw-side { display: none; }
+        }
+        @media (max-width: 640px) {
+            .hero { padding: 120px 20px 60px; grid-template-columns: 1fr; }
+            .hero-product { max-width: 340px; margin: 0 auto; }
+            .nav-right a:not(.nav-cta) { display: none; }
+            .how-steps { grid-template-columns: 1fr; }
+            .how-steps { gap: 24px; }
+            .platform-grid { grid-template-columns: 1fr; }
+            .hero-product { padding: 24px 16px 0; border-radius: 14px; }
+            .product-window { border-radius: 10px 10px 0 0; }
+            .oss-stats { gap: 24px; flex-wrap: wrap; }
+        }
+    </style>
+</head>
+<body>
+
+<nav>
+    <div class="nav-inner">
+        <a href="/" class="nav-left">
+            <div class="nav-mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg></div>
+            <span class="nav-wordmark">ChatyInput</span>
+        </a>
+        <div class="nav-right">
+            <a href="#features">Features</a>
+            <a href="#how-it-works">How It Works</a>
+            <a href="#download">Download</a>
+            <a href="https://github.com/thinkroid/ChatyInput" class="nav-cta" target="_blank" rel="noopener">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="15" height="15" style="margin-right:2px"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12Z"/></svg>
+                GitHub
+            </a>
+        </div>
+    </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+    <div class="hero-text">
+    <h1>Speak naturally.<br><span style="color:var(--accent)">AI handles the rest.</span></h1>
+    <p class="hero-sub">Open-source voice input with LLM-powered intent recognition. Dictate, edit, and send — all by voice. Bring your own AI provider. No account, no telemetry, no lock-in.</p>
+    <div class="hero-actions">
+        <a href="https://github.com/thinkroid/ChatyInput" class="btn btn-dark" target="_blank">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12Z"/></svg>
+            View on GitHub
+        </a>
+        <a href="#download" class="btn btn-ghost">Download for macOS</a>
+    </div>
+    </div><!-- end hero-text -->
+
+    <!-- Product phone mockup -->
+    <div class="hero-product">
+        <!-- Speaking person — outside the app window -->
+        <div class="speaking-person" id="demo-speaking">
+            <div class="sp-avatar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 0 0-16 0"/></svg>
+            </div>
+            <div class="sp-bubble" id="demo-bubble">
+                <div class="sp-waves">
+                    <div class="sw" style="height:6px;animation-delay:0s"></div>
+                    <div class="sw" style="height:14px;animation-delay:.1s"></div>
+                    <div class="sw" style="height:8px;animation-delay:.2s"></div>
+                    <div class="sw" style="height:16px;animation-delay:.05s"></div>
+                    <div class="sw" style="height:10px;animation-delay:.15s"></div>
+                    <div class="sw" style="height:14px;animation-delay:.08s"></div>
+                    <div class="sw" style="height:6px;animation-delay:.18s"></div>
+                </div>
+                <span class="sp-text" id="demo-speech-label">Speaking...</span>
+            </div>
+        </div>
+        <div class="product-window">
+            <!-- Phone status bar -->
+            <div class="pw-phone-status">
+                <span>9:41</span>
+                <div class="pw-phone-status-right">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1" fill="#999"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><rect x="1" y="6" width="18" height="12" rx="2"/><path d="M23 10v4"/></svg>
+                </div>
+            </div>
+            <!-- Chat app area (the target app) -->
+            <div class="pw-chat-area">
+                <div class="pw-chat-input" id="demo-chat-input">
+                    <span class="pw-chat-input-text" id="demo-chat-text">Message...</span>
+                </div>
+            </div>
+            <!-- ChatyInput IME keyboard -->
+            <div class="pw-ime">
+                <!-- Buffer -->
+                <div class="pw-buffer"><span id="demo-text"></span><span class="pw-cursor"></span></div>
+                <!-- Status -->
+                <div class="pw-footer" style="margin-top:8px;">
+                    <div class="pw-status"><div class="pw-status-dot" id="demo-dot"></div><span id="demo-status">Ready</span></div>
+                </div>
+                <!-- IME buttons row: expand | PTT big button + edit | backspace | send -->
+                <div style="display:flex;align-items:center;gap:6px;margin-top:10px;">
+                    <!-- Left column -->
+                    <div style="display:flex;flex-direction:column;gap:4px;">
+                        <div class="pw-btn" style="padding:6px 10px;font-size:10px;">ABC</div>
+                        <div class="pw-btn" style="padding:6px 10px;font-size:10px;">Clear</div>
+                    </div>
+                    <!-- Center: PTT + Edit -->
+                    <div style="flex:1;display:flex;gap:6px;justify-content:center;align-items:center;">
+                        <div class="pw-rec" id="demo-rec">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+                        </div>
+                        <div class="pw-edit-btn" id="demo-edit">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                        </div>
+                    </div>
+                    <!-- Right column -->
+                    <div style="display:flex;flex-direction:column;gap:4px;">
+                        <div class="pw-btn" style="padding:6px 10px;font-size:10px;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="12" height="12"><path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/><line x1="18" y1="9" x2="12" y2="15"/><line x1="12" y1="9" x2="18" y2="15"/></svg>
+                        </div>
+                        <div class="pw-btn send" style="padding:6px 10px;font-size:10px;">Send</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Feature 1: STT -->
+<div id="features"></div>
+<section class="feature-section reveal">
+    <div class="feature-text">
+        <span class="feature-tag">Speech-to-Text</span>
+        <h2>Your voice, transcribed instantly</h2>
+        <p>Powered by Whisper API with switchable providers. Use OpenAI Whisper, or bring your own Whisper-compatible endpoint. Multi-language support follows your system settings — Chinese, English, Japanese, Korean, and more. The language hint is passed to Whisper for significantly better accuracy.</p>
+    </div>
+    <div class="feature-visual">
+        <div class="fv-inner">
+            <div class="stt-viz">
+                <div class="stt-wave">
+                    <div class="bar" style="height:18px;animation-delay:0s"></div>
+                    <div class="bar" style="height:32px;animation-delay:.1s"></div>
+                    <div class="bar" style="height:12px;animation-delay:.2s"></div>
+                    <div class="bar" style="height:40px;animation-delay:.05s"></div>
+                    <div class="bar" style="height:24px;animation-delay:.15s"></div>
+                    <div class="bar" style="height:36px;animation-delay:.25s"></div>
+                    <div class="bar" style="height:16px;animation-delay:.08s"></div>
+                    <div class="bar" style="height:28px;animation-delay:.12s"></div>
+                    <div class="bar" style="height:44px;animation-delay:.18s"></div>
+                    <div class="bar" style="height:20px;animation-delay:.22s"></div>
+                </div>
+                <div class="stt-arrow">&rarr;</div>
+                <div class="stt-text">Schedule a meeting for tomorrow at 3 PM<span class="pw-cursor"></span></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Feature 2: LLM Intent -->
+<section class="feature-section reverse reveal">
+    <div class="feature-text">
+        <span class="feature-tag">LLM Intent Recognition</span>
+        <h2>AI understands what you mean</h2>
+        <p>Every voice segment is classified — content input, edit command, or send. No mode switching, no buttons to press. Just speak naturally and the AI figures out the rest. A dedicated edit button lets you record edit-only commands with a specialized prompt for precision edits.</p>
+    </div>
+    <div class="feature-visual">
+        <div class="fv-inner">
+            <div class="intent-cards">
+                <div class="intent-card">
+                    <div class="intent-dot green"></div>
+                    <span class="intent-label">content</span>
+                    <span class="intent-val">"Schedule a meeting for 3 PM"</span>
+                </div>
+                <div class="intent-card">
+                    <div class="intent-dot blue"></div>
+                    <span class="intent-label">edit</span>
+                    <span class="intent-val">"Change three to four"</span>
+                </div>
+                <div class="intent-card">
+                    <div class="intent-dot amber"></div>
+                    <span class="intent-label">send</span>
+                    <span class="intent-val">"OK, send it"</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Feature 3: Bring Your Own Provider -->
+<section class="feature-section reveal">
+    <div class="feature-text">
+        <span class="feature-tag">Bring Your Own Provider</span>
+        <h2>Works with any AI service</h2>
+        <p>Use OpenAI, Claude, or any OpenAI-compatible endpoint for the LLM. Use Whisper or any Whisper-compatible API for STT. Self-host your models, use a local LLM, or connect to your company's private endpoint — ChatyInput doesn't lock you in.</p>
+    </div>
+    <div class="feature-visual">
+        <div class="fv-inner">
+            <div class="intent-cards">
+                <div class="intent-card">
+                    <div class="intent-dot green"></div>
+                    <span class="intent-label">OpenAI</span>
+                    <span class="intent-val">GPT-4o &middot; Whisper</span>
+                </div>
+                <div class="intent-card">
+                    <div class="intent-dot blue"></div>
+                    <span class="intent-label">Anthropic</span>
+                    <span class="intent-val">Claude Sonnet &middot; Haiku</span>
+                </div>
+                <div class="intent-card">
+                    <div class="intent-dot amber"></div>
+                    <span class="intent-label">Compatible</span>
+                    <span class="intent-val">Ollama &middot; vLLM &middot; any endpoint</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Feature 4: Privacy -->
+<section class="feature-section reverse reveal">
+    <div class="feature-text">
+        <span class="feature-tag">Privacy First</span>
+        <h2>Your voice stays yours</h2>
+        <p>No accounts. No telemetry. No data collection. Audio recordings are stored locally on your device for history playback — never uploaded to any server except your chosen STT provider. API keys live locally, encrypted at rest. Fully open source — audit every line.</p>
+    </div>
+    <div class="feature-visual">
+        <div class="fv-inner" style="text-align:center;">
+            <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#eee" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="margin:0 auto 24px;opacity:.7">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                <circle cx="12" cy="16" r="1"/>
+            </svg>
+            <div style="display:flex;flex-direction:column;gap:8px;max-width:260px;margin:0 auto;">
+                <div style="display:flex;align-items:center;gap:10px;background:#1a1a1a;border:1px solid #383838;border-radius:8px;padding:10px 14px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>
+                    <span style="font-size:13px;color:#ddd;">No account required</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;background:#1a1a1a;border:1px solid #383838;border-radius:8px;padding:10px 14px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>
+                    <span style="font-size:13px;color:#ddd;">Zero telemetry</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;background:#1a1a1a;border:1px solid #383838;border-radius:8px;padding:10px 14px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>
+                    <span style="font-size:13px;color:#ddd;">Keys encrypted locally</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;background:#1a1a1a;border:1px solid #383838;border-radius:8px;padding:10px 14px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>
+                    <span style="font-size:13px;color:#ddd;">Audio stored locally only</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Feature 5: Custom Dictionary -->
+<section class="feature-section reveal">
+    <div class="feature-text">
+        <span class="feature-tag">Custom Dictionary</span>
+        <h2>Teach it your words</h2>
+        <p>Add names, jargon, abbreviations, and domain-specific terms. The AI prioritizes phonetically similar matches from your dictionary — so "Kubernetes" doesn't become "Cooper Nettie's" and your colleague "Aoife" is always spelled right.</p>
+    </div>
+    <div class="feature-visual">
+        <div class="fv-inner">
+            <div style="display:flex;flex-direction:column;gap:6px;">
+                <div style="display:flex;align-items:center;gap:12px;background:#1a1a1a;border:1px solid #383838;border-radius:8px;padding:12px 16px;">
+                    <span style="font-size:12px;color:#aaa;width:24px;text-align:center;">1</span>
+                    <span style="font-size:14px;color:#eee;font-weight:500;">Kubernetes</span>
+                    <span style="font-size:12px;color:#666;margin-left:auto;">k8s</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;background:#1a1a1a;border:1px solid #383838;border-radius:8px;padding:12px 16px;">
+                    <span style="font-size:12px;color:#aaa;width:24px;text-align:center;">2</span>
+                    <span style="font-size:14px;color:#eee;font-weight:500;">Aoife</span>
+                    <span style="font-size:12px;color:#666;margin-left:auto;">name</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;background:#1a1a1a;border:1px solid #383838;border-radius:8px;padding:12px 16px;">
+                    <span style="font-size:12px;color:#aaa;width:24px;text-align:center;">3</span>
+                    <span style="font-size:14px;color:#eee;font-weight:500;">Thinkroid</span>
+                    <span style="font-size:12px;color:#666;margin-left:auto;">company</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;background:#1a1a1a;border:1px solid #383838;border-radius:8px;padding:12px 16px;">
+                    <span style="font-size:12px;color:#aaa;width:24px;text-align:center;">4</span>
+                    <span style="font-size:14px;color:#eee;font-weight:500;">PostgreSQL</span>
+                    <span style="font-size:12px;color:#666;margin-left:auto;">tech</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Feature 6: Cross-platform -->
+<section class="feature-section reverse reveal">
+    <div class="feature-text">
+        <span class="feature-tag">Cross-Platform</span>
+        <h2>Native on every device</h2>
+        <p>Menu bar app on macOS. Keyboard extension on iOS. Full IME on Android. System tray on Windows. Each version is built natively for its platform — no Electron, no web wrappers, no compromises. Text injection works directly into any app you're using.</p>
+    </div>
+    <div class="feature-visual" style="background:linear-gradient(135deg,#111 0%,#1a1a1a 100%);">
+        <div class="fv-inner" style="text-align:center;">
+            <div style="display:flex;gap:32px;justify-content:center;align-items:flex-end;">
+                <div style="text-align:center;">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="1.2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                    <div style="font-size:11px;color:#aaa;margin-top:8px;">macOS</div>
+                </div>
+                <div style="text-align:center;">
+                    <svg width="32" height="48" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="1.2"><rect x="5" y="2" width="14" height="20" rx="3"/><line x1="12" y1="18" x2="12.01" y2="18" stroke-width="2"/></svg>
+                    <div style="font-size:11px;color:#aaa;margin-top:8px;">iOS</div>
+                </div>
+                <div style="text-align:center;">
+                    <svg width="32" height="48" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="1.2"><rect x="5" y="2" width="14" height="20" rx="3"/><path d="M10 5h4" stroke-linecap="round"/></svg>
+                    <div style="font-size:11px;color:#aaa;margin-top:8px;">Android</div>
+                </div>
+                <div style="text-align:center;">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="1.2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                    <div style="font-size:11px;color:#aaa;margin-top:8px;">Windows</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works -->
+<section class="how-section" id="how-it-works">
+    <div class="how-inner reveal">
+        <span class="section-tag">How It Works</span>
+        <h2>Voice to any app, in four steps</h2>
+        <div class="how-steps">
+            <div class="how-step">
+                <div class="how-num">01</div>
+                <h3>Speak</h3>
+                <p>Hold the record button and speak naturally. Dictate content in any language — hold-to-record (PTT) or click-to-toggle, your choice.</p>
+            </div>
+            <div class="how-step">
+                <div class="how-num">02</div>
+                <h3>Process</h3>
+                <p>Whisper transcribes your speech. The LLM classifies intent, auto-corrects errors, applies your custom dictionary, and updates the buffer.</p>
+            </div>
+            <div class="how-step">
+                <div class="how-num">03</div>
+                <h3>Edit</h3>
+                <p>Hold the edit button to refine. Say "change 3 to 5" or "rewrite as a formal email" — the LLM modifies the buffer while preserving your intent.</p>
+            </div>
+            <div class="how-step">
+                <div class="how-num">04</div>
+                <h3>Inject</h3>
+                <p>Say "send" and the text is injected into the active app — Slack, Gmail, VS Code, any text field. Native injection on every platform.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Download -->
+<section class="platforms-section" id="download">
+    <div class="reveal">
+        <span class="section-tag">Download</span>
+        <h2>Get ChatyInput</h2>
+        <div class="platform-grid">
+            <div class="plat-card">
+                <div class="plat-icon"><svg viewBox="0 0 24 24" fill="var(--ink)"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11Z"/></svg></div>
+                <h3>macOS</h3>
+                <p class="plat-desc">Menu bar + floating panel</p>
+                <a href="https://github.com/thinkroid/ChatyInput/releases" class="btn btn-ghost" target="_blank">Download</a>
+            </div>
+            <div class="plat-card">
+                <div class="plat-icon"><svg viewBox="0 0 24 24" fill="var(--ink)"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11Z"/></svg></div>
+                <h3>iOS</h3>
+                <p class="plat-desc">Keyboard extension</p>
+                <a href="https://github.com/thinkroid/ChatyInput/releases" class="btn btn-ghost" target="_blank">Download</a>
+            </div>
+            <div class="plat-card">
+                <div class="plat-icon"><svg viewBox="0 0 24 24" fill="var(--ink)"><path d="M17.523 2.236a.5.5 0 0 0-.862.51l1.08 1.825A6.978 6.978 0 0 0 12 2.5a6.978 6.978 0 0 0-5.741 2.071l1.08-1.825a.5.5 0 1 0-.862-.51L5.18 4.776A7.5 7.5 0 0 0 4.5 9.5h15a7.5 7.5 0 0 0-.68-4.724l-1.297-2.54ZM8.5 7a1 1 0 1 1 0-2 1 1 0 0 1 0 2Zm7 0a1 1 0 1 1 0-2 1 1 0 0 1 0 2ZM5 10.5h14v7a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3v-7Z"/></svg></div>
+                <h3>Android</h3>
+                <p class="plat-desc">Full IME keyboard</p>
+                <a href="https://github.com/thinkroid/ChatyInput/releases" class="btn btn-ghost" target="_blank">Download</a>
+            </div>
+            <div class="plat-card">
+                <div class="plat-icon"><svg viewBox="0 0 24 24" fill="var(--ink)"><path d="M3 12V6.5l8-1.1V12H3zm0 .5h8v6.6l-8-1.1V12.5zM11.5 5.3l9.5-1.3v8h-9.5V5.3zm0 7.2h9.5v8l-9.5-1.3V12.5z"/></svg></div>
+                <h3>Windows</h3>
+                <p class="plat-desc">System tray app</p>
+                <a href="https://github.com/thinkroid/ChatyInput/releases" class="btn btn-ghost" target="_blank">Coming Soon</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Open Source -->
+<section class="oss-section">
+    <div class="oss-inner reveal">
+        <h2>Built in the open</h2>
+        <p>MIT licensed. Every line of code is auditable. Fork it, self-host it, modify it, contribute back. No proprietary cloud, no subscription, no strings attached.</p>
+        <div class="oss-stats">
+            <div class="oss-stat"><div class="oss-stat-val">MIT</div><div class="oss-stat-label">License</div></div>
+            <div class="oss-stat"><div class="oss-stat-val">4</div><div class="oss-stat-label">Platforms</div></div>
+            <div class="oss-stat"><div class="oss-stat-val">3</div><div class="oss-stat-label">Languages</div></div>
+        </div>
+        <div class="oss-actions">
+            <a href="https://github.com/thinkroid/ChatyInput" class="btn btn-dark" target="_blank">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="17" height="17"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                Star on GitHub
+            </a>
+        </div>
+    </div>
+</section>
+
+<footer>
+    <div class="footer-inner">
+        <div class="footer-left">&copy; 2026 <a href="https://thinkroid.com">Thinkroid</a> &middot; Built in Vancouver</div>
+        <div class="footer-right">
+            <a href="https://github.com/thinkroid/ChatyInput" target="_blank">GitHub</a>
+            <a href="https://github.com/thinkroid/ChatyInput/issues" target="_blank">Issues</a>
+        </div>
+    </div>
+</footer>
+
+<script>
+// Scroll reveal
+const obs = new IntersectionObserver(es => {
+    es.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.05, rootMargin: '0px 0px -40px 0px' });
+document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+
+// Hero demo animation — all content is hardcoded, no external input
+(function() {
+    const textEl = document.getElementById('demo-text');
+    const statusEl = document.getElementById('demo-status');
+    const dotEl = document.getElementById('demo-dot');
+    const recEl = document.getElementById('demo-rec');
+    const editEl = document.getElementById('demo-edit');
+    const speakingEl = document.getElementById('demo-speaking');
+    const speechLabel = document.getElementById('demo-speech-label');
+    const chatText = document.getElementById('demo-chat-text');
+    const chatInput = document.getElementById('demo-chat-input');
+
+    function setDot(color) { dotEl.style.background = color; }
+    function setStatus(t) { statusEl.textContent = t; }
+    function setRec(on) { recEl.classList.toggle('recording', on); }
+    function setSpeaking(on, label) {
+        speakingEl.classList.toggle('active', on);
+        if (label) speechLabel.textContent = label;
+    }
+    function pressDown(el) { el.classList.add('pressed'); }
+    function releaseBtn(el) { el.classList.remove('pressed'); }
+
+    function typeText(text, speed) {
+        return new Promise(resolve => {
+            let i = 0;
+            const iv = setInterval(() => {
+                textEl.textContent = text.slice(0, ++i);
+                if (i >= text.length) { clearInterval(iv); resolve(); }
+            }, speed);
+        });
+    }
+
+    // Show text with a highlighted span via safe DOM methods
+    function showWithHighlight(before, highlight, after) {
+        textEl.textContent = '';
+        textEl.appendChild(document.createTextNode(before));
+        var span = document.createElement('span');
+        span.className = 'demo-highlight';
+        span.textContent = highlight;
+        textEl.appendChild(span);
+        textEl.appendChild(document.createTextNode(after));
+    }
+
+    function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    async function runDemo() {
+        var dictation = "I'd like to schedule a meeting for tomorrow at 3 PM.";
+        var afterTime = "I'd like to schedule a meeting for tomorrow at 5 PM.";
+        var emailVersion = "Hi team,\n\nI'd like to schedule a meeting for tomorrow at 5 PM. Please let me know if this time works for everyone.\n\nBest regards";
+        var timeBefore = "I'd like to schedule a meeting for tomorrow at ";
+        var timeAfter = ".";
+
+        // Step 1: idle
+        textEl.style.whiteSpace = '';
+        textEl.textContent = '';
+        chatText.textContent = 'Message...';
+        chatText.style.color = '';
+        chatInput.style.borderColor = '';
+        setStatus('Ready');
+        setDot('#22c55e');
+        setSpeaking(false);
+        await wait(1200);
+
+        // Hold record button down (PTT)
+        pressDown(recEl);
+        setRec(true);
+        setDot('#ef4444');
+        setStatus('Recording...');
+        setSpeaking(true, 'Speaking...');
+        await wait(500);
+
+        // Typing (STT)
+        await typeText(dictation, 30);
+
+        await wait(300);
+        releaseBtn(recEl);
+        setRec(false);
+        setSpeaking(false);
+        await wait(300);
+
+        // LLM
+        setDot('#f59e0b');
+        setStatus('Processing...');
+        await wait(800);
+
+        // Content detected
+        setDot('#22c55e');
+        setStatus('content \u2014 appended to buffer');
+        await wait(2000);
+
+        // Step 2: Hold edit button (PTT)
+        pressDown(editEl);
+        editEl.classList.add('recording');
+        setDot('#ef4444');
+        setStatus('Recording edit...');
+        setSpeaking(true, '"Change 3 PM to 5 PM"');
+        await wait(1800);
+
+        releaseBtn(editEl);
+        editEl.classList.remove('recording');
+        setSpeaking(false);
+        await wait(300);
+
+        // Process edit
+        setDot('#f59e0b');
+        setStatus('Processing edit...');
+        await wait(800);
+
+        // Highlight 3 PM
+        showWithHighlight(timeBefore, '3 PM', timeAfter);
+        await wait(500);
+
+        // Swap to 5 PM
+        showWithHighlight(timeBefore, '5 PM', timeAfter);
+        setDot('#3b82f6');
+        setStatus('edit \u2014 changed "3 PM" to "5 PM"');
+        await wait(600);
+
+        textEl.textContent = afterTime;
+        setDot('#22c55e');
+        setStatus('edit applied');
+        await wait(2000);
+
+        // Step 3: Hold edit button — rewrite as email
+        pressDown(editEl);
+        editEl.classList.add('recording');
+        setDot('#ef4444');
+        setStatus('Recording edit...');
+        setSpeaking(true, '"Rewrite as an email to the whole team"');
+        await wait(2000);
+
+        releaseBtn(editEl);
+        editEl.classList.remove('recording');
+        setSpeaking(false);
+        await wait(300);
+
+        setDot('#f59e0b');
+        setStatus('Processing edit...');
+        await wait(1000);
+
+        textEl.style.whiteSpace = 'pre-wrap';
+        textEl.textContent = emailVersion;
+        setDot('#3b82f6');
+        setStatus('edit \u2014 rewritten as email format');
+        await wait(800);
+
+        setDot('#22c55e');
+        setStatus('edit applied');
+        await wait(2000);
+
+        // Step 4: Hold rec button — send
+        pressDown(recEl);
+        setRec(true);
+        setDot('#ef4444');
+        setStatus('Recording...');
+        setSpeaking(true, '"Send it"');
+        await wait(1200);
+        releaseBtn(recEl);
+        setRec(false);
+        setSpeaking(false);
+        await wait(300);
+
+        setDot('#f59e0b');
+        setStatus('Processing...');
+        await wait(600);
+
+        setDot('#f59e0b');
+        setStatus('send \u2014 injecting into active app');
+        await wait(800);
+
+        // Inject text into the chat input box above
+        var sentText = textEl.textContent;
+        chatText.textContent = sentText;
+        chatText.style.color = '#eee';
+        chatInput.style.borderColor = 'var(--accent)';
+        await wait(400);
+
+        textEl.style.whiteSpace = '';
+        textEl.textContent = '';
+        setDot('#22c55e');
+        setStatus('Sent! Buffer cleared.');
+        await wait(1500);
+
+        chatText.textContent = 'Message...';
+        chatText.style.color = '';
+        chatInput.style.borderColor = '';
+        await wait(1000);
+
+        runDemo();
+    }
+
+    setTimeout(runDemo, 1000);
+})();
+</script>
+</body>
+</html>
