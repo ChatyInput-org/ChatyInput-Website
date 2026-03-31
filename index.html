@@ -417,6 +417,9 @@
             display: grid; grid-template-columns: repeat(4, 1fr);
             gap: 16px; margin-top: 48px;
         }
+        .roadmap-grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
         .plat-card {
             border: 1px solid var(--border);
             border-radius: var(--radius);
@@ -509,6 +512,7 @@
             .feature-section.reverse .feature-visual { order: unset; }
             .feature-visual { min-height: 260px; }
             .platform-grid { grid-template-columns: repeat(2, 1fr); }
+            .roadmap-grid { grid-template-columns: repeat(2, 1fr); }
             .how-steps { grid-template-columns: repeat(2, 1fr); }
             .pw-side { display: none; }
         }
@@ -983,7 +987,7 @@
     <div class="feature-text">
         <span class="feature-tag">Smart Modes</span>
         <h2>AI picks the right tone</h2>
-        <p>Each mode has a trigger condition — the AI reads your current app, GPS location, and input content, then automatically selects the best mode. Formal in Gmail, concise in Slack, friendly in WhatsApp, structured in Notion. Set up location triggers for your office, home, or travel destinations. The AI can even switch output language based on where you are. Lock a mode from the keyboard if you want full control, or let the AI decide.</p>
+        <p>Each mode has a trigger condition — the AI reads your current app, GPS location, and input content, then automatically selects the best mode. Switch between Smart and Strict editing: Smart mode proactively edits, calculates, and fills in information; Strict mode waits for explicit commands. The AI uses multi-turn tool calling to switch modes mid-conversation. Lock a mode from the keyboard if you want full control, or let the AI decide.</p>
         <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;">
             <div style="display:flex;align-items:center;gap:6px;background:#1a1a1a;border:1px solid #383838;border-radius:6px;padding:6px 12px;">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>
@@ -1008,6 +1012,14 @@
             <div style="display:flex;align-items:center;gap:6px;background:#1a1a1a;border:1px solid #383838;border-radius:6px;padding:6px 12px;">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>
                 <span style="font-size:12px;color:#ddd;">Auto language by location</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;background:#1a1a1a;border:1px solid #383838;border-radius:6px;padding:6px 12px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>
+                <span style="font-size:12px;color:#ddd;">Smart / Strict editing</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;background:#1a1a1a;border:1px solid #383838;border-radius:6px;padding:6px 12px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>
+                <span style="font-size:12px;color:#ddd;">Multi-turn tool use</span>
             </div>
         </div>
     </div>
@@ -1135,7 +1147,7 @@
     <div class="reveal">
         <span class="section-tag">Roadmap</span>
         <h2>What's coming next</h2>
-        <div id="roadmap-grid" class="platform-grid" style="grid-template-columns:repeat(3,1fr);margin-top:40px;">
+        <div id="roadmap-grid" class="platform-grid roadmap-grid" style="margin-top:40px;">
             <div style="border:1px solid var(--border);border-radius:var(--radius);padding:24px;background:var(--card);">
                 <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);margin-bottom:8px;">Platforms</div>
                 <h3 style="font-size:16px;font-weight:700;margin-bottom:8px;">macOS, iOS &amp; Windows</h3>
@@ -1178,13 +1190,18 @@
             </div>
             <div style="border:1px solid var(--border);border-radius:var(--radius);padding:24px;background:var(--card);">
                 <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);margin-bottom:8px;">Intelligence</div>
-                <h3 style="font-size:16px;font-weight:700;margin-bottom:8px;">Multi-turn Tool Use</h3>
-                <p style="font-size:14px;color:var(--ink-2);line-height:1.6;">LLM function calling for advanced mode switching, web search, template insertion, and custom actions during voice input processing.</p>
+                <h3 style="font-size:16px;font-weight:700;margin-bottom:8px;">More Tools</h3>
+                <p style="font-size:14px;color:var(--ink-2);line-height:1.6;">Expand the tool system beyond switch_mode — web search, template insertion, translation, and custom actions via the extensible tool registry.</p>
             </div>
             <div style="border:1px solid var(--border);border-radius:var(--radius);padding:24px;background:var(--card);">
                 <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);margin-bottom:8px;">Location</div>
                 <h3 style="font-size:16px;font-weight:700;margin-bottom:8px;">Map &amp; Place Search</h3>
                 <p style="font-size:14px;color:var(--ink-2);line-height:1.6;">Google Maps integration for location triggers — search places by name, pick locations on a map, and auto-detect nearby landmarks.</p>
+            </div>
+            <div style="border:1px solid var(--border);border-radius:var(--radius);padding:24px;background:var(--card);">
+                <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);margin-bottom:8px;">Keyboard</div>
+                <h3 style="font-size:16px;font-weight:700;margin-bottom:8px;">AI-Powered Keypad</h3>
+                <p style="font-size:14px;color:var(--ink-2);line-height:1.6;">A full local-language keyboard built into the IME for typing what's hard to say. Typed text goes through the same AI pipeline — auto-correct, intent detection, mode switching, and smart editing all work seamlessly with keyboard input.</p>
             </div>
             <div style="border:1px solid var(--border);border-radius:var(--radius);padding:24px;background:var(--card);">
                 <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);margin-bottom:8px;">Learning</div>
