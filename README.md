@@ -36,7 +36,9 @@ CNAME               # Custom domain config
 
 ## License
 
-[GPL-3.0](../LICENSE)
+Source Available. See [LICENSE](LICENSE).
+
+The ChatyInput name, logo, and branding assets are proprietary to Thinkroid Technology Ltd. and may not be used without permission.
 
 ## Links
 
