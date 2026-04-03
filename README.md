@@ -36,12 +36,13 @@ CNAME               # Custom domain config
 
 ## License
 
-Source Available. See [LICENSE](LICENSE).
+[CC BY-SA 4.0](LICENSE)
 
-The ChatyInput name, logo, and branding assets are proprietary to Thinkroid Technology Ltd. and may not be used without permission.
+The ChatyInput name, logo, and branding assets are proprietary to Thinkroid Technologies Inc. and are NOT covered by the CC BY-SA 4.0 license. Use requires prior written permission.
 
 ## Links
 
 - **Live site:** [chatyinput.com](https://chatyinput.com)
 - **GitHub:** [ChatyInput-org](https://github.com/ChatyInput-org)
-- **Built by:** [Thinkroid](https://thinkroid.com)
+- **Contact:** [thinkroid.com/contact](https://www.thinkroid.com/contact/)
+- **Built by:** [Thinkroid](https://thinkroid.com) in Vancouver
